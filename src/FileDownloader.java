@@ -8,8 +8,6 @@ import java.util.Scanner;
 public class FileDownloader {
 
     private Long remoteFileSize;
-    private Long localFileSize;
-    private String fileName;
     private File file;
     private String FILE_URL;
     private HttpURLConnection urlConnection;
@@ -44,10 +42,10 @@ public class FileDownloader {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        fileName = FILE_URL.substring(FILE_URL.lastIndexOf("/") + 1);
+        String fileName = FILE_URL.substring(FILE_URL.lastIndexOf("/") + 1);
         file = new File(fileName);
         if (file.exists()) {
-            localFileSize = file.length();
+            Long localFileSize = file.length();
             return true;
         }
         return false;
@@ -56,21 +54,15 @@ public class FileDownloader {
     public void startNewDownload() {
         try{
             urlConnection = (HttpURLConnection) url.openConnection();
-            urlConnection.setReadTimeout(1000);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            System.out.println("File Does Not Exist...!");
+            urlConnection.setReadTimeout(10000);
         } catch (IOException e) {
-            e.printStackTrace();
-            System.out.println("Unknown Error Occurred...!");
+            throw new RuntimeException(e);
         }
 
         try(
             FileOutputStream fileOutputStream = new FileOutputStream(file);
             BufferedInputStream bufferedInputStream = new BufferedInputStream(urlConnection.getInputStream())){
                 start(bufferedInputStream, fileOutputStream);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -79,14 +71,9 @@ public class FileDownloader {
     public void resumeDownload() {
         try{
             urlConnection = (HttpURLConnection) url.openConnection();
-            urlConnection.setReadTimeout(1000);
-            urlConnection.setRequestMethod("GET");
-            urlConnection.setDoOutput(true);
-            urlConnection.setDoInput(true);
+            urlConnection.setReadTimeout(10000);
             urlConnection.setAllowUserInteraction(false);
             urlConnection.setRequestProperty("Range", "bytes=" + file.length() + "-");
-
-            urlConnection.connect();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -100,7 +87,7 @@ public class FileDownloader {
     }
     public void start(BufferedInputStream bufferedInputStream, FileOutputStream fileOutputStream) {
         try {
-            byte dataBuffer[] = new byte[1024];
+            byte[] dataBuffer = new byte[1024];
             int bytesRead;
             while ((bytesRead = bufferedInputStream.read(dataBuffer, 0, 1024)) != -1) {
                 fileOutputStream.write(dataBuffer, 0, bytesRead);
@@ -111,8 +98,8 @@ public class FileDownloader {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }finally {
-            System.out.printf("Exiting....!");
-            System.out.printf("Closing Connections...!");
+            System.out.print("Exiting....!");
+            System.out.print("Closing Connections...!");
             urlConnection.disconnect();
         }
     }
